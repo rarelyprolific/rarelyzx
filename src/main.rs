@@ -1,4 +1,4 @@
-use ansi_term::Colour::{Blue, Green, Red, Yellow};
+use ansi_term::Colour::{Blue, Green, Purple, Red, Yellow};
 use std::env;
 use std::fs;
 use std::io::Read;
@@ -16,7 +16,7 @@ fn main() {
     // We've loaded the file successfuly, so print details about the TZX data
     // (The TZX file format seems to be well documented at https://www.worldofspectrum.org/TZXformat.html)
     parse_tzx_information(&tzx_buffer);
-    println!("Size: {} bytes", tzx_buffer.len());
+    println!("\nSize: {} bytes", tzx_buffer.len());
 }
 
 /// Verifies if the file being loaded is a TZX by checking if the first seven bytes are
@@ -38,8 +38,38 @@ fn parse_tzx_information(buffer: &Vec<u8>) {
     // }
     println!(
         "{} End of TZX file header text file marker: 0x{:X?}",
-        Yellow.paint("DEBUG!"),
-        &buffer[7]
+        Purple.paint("DEBUG!"),
+        buffer[7]
+    );
+
+    println!("TZX revision number: {}.{}", buffer[8], buffer[9]);
+
+    // TODO: Write a bunch of proper parsing functions later to read the TZX blocks and get us some data
+    //   (Probably representing these in structs?)
+    println!(
+        "Block Type ID: 0x{:X?} [0x32 is 'Archive info']",
+        buffer[10]
+    );
+
+    println!("\n{}", Yellow.paint("READING ARCHIVE INFO:"));
+    println!("Blocksize: 0x{:X?}{:X?}", buffer[11], buffer[12]);
+    println!("Number of text strings: {}", buffer[13]);
+
+    println!(
+        "FIRST TEXT STRING: Text Identification Byte: 0x{:X?}",
+        buffer[14]
+    );
+    println!("Length of text string: 0x{:X?}", buffer[15]);
+    println!("Full title: '{}'", String::from_utf8_lossy(&buffer[16..37]));
+
+    println!(
+        "SECOND TEXT STRING: Text Identification Byte: 0x{:X?}",
+        buffer[38]
+    );
+    println!("Length of text string: 0x{:X?}", buffer[39]);
+    println!(
+        "Software house/publisher: '{}'",
+        String::from_utf8_lossy(&buffer[40..46])
     );
 }
 
@@ -79,7 +109,7 @@ fn get_tzx_filename_commandline_parameter() -> String {
 
     match tzx_filename {
         Some(tzx_filename) => {
-            println!("Searching for: {}", tzx_filename);
+            println!("Loading.. {}", tzx_filename);
             return tzx_filename;
         }
         None => {
