@@ -15,22 +15,32 @@ fn main() {
 
     // We've loaded the file successfuly, so print details about the TZX data
     // (The TZX file format seems to be well documented at https://www.worldofspectrum.org/TZXformat.html)
-    check_if_tzx(&tzx_buffer);
+    parse_tzx_information(&tzx_buffer);
     println!("Size: {} bytes", tzx_buffer.len());
 }
 
 /// Verifies if the file being loaded is a TZX by checking if the first seven bytes are
 /// the "ZXTape!" file header
-fn check_if_tzx(buffer: &Vec<u8>) {
-    let tzx_file_header = String::from_utf8_lossy(&buffer[0..7]);
-
-    if tzx_file_header != "ZXTape!" {
+fn parse_tzx_information(buffer: &Vec<u8>) {
+    // Make sure this file looks like a valid TZX before we proceed
+    if String::from_utf8_lossy(&buffer[0..7]) != "ZXTape!" {
         println!(
             "{} Could not find the TZX file header.. Is this a valid TZX file?",
             Red.paint("ERROR!")
         );
         std::process::exit(0);
     }
+
+    // TODO: It would be great if I could do something like the below (but not sure how to do this in Rust yet!)
+    // if &buffer[7] != 0x1A {
+    //     println!("{} Could not find end of text file marker [0x1A] following file header.. Is this a valid TZX file?", Red.paint("ERROR!"));
+    //     std::process::exit(0);
+    // }
+    println!(
+        "{} End of TZX file header text file marker: 0x{:X?}",
+        Yellow.paint("DEBUG!"),
+        &buffer[7]
+    );
 }
 
 /// Load the data from the specified TZX file into a buffer
