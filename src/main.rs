@@ -13,8 +13,24 @@ fn main() {
     let mut tzx_buffer = Vec::new();
     load_tzx_file(tzx_filename, &mut tzx_buffer);
 
-    // Print details about the TZX data
+    // We've loaded the file successfuly, so print details about the TZX data
+    // (The TZX file format seems to be well documented at https://www.worldofspectrum.org/TZXformat.html)
+    check_if_tzx(&tzx_buffer);
     println!("Size: {} bytes", tzx_buffer.len());
+}
+
+/// Verifies if the file being loaded is a TZX by checking if the first seven bytes are
+/// the "ZXTape!" file header
+fn check_if_tzx(buffer: &Vec<u8>) {
+    let tzx_file_header = String::from_utf8_lossy(&buffer[0..7]);
+
+    if tzx_file_header != "ZXTape!" {
+        println!(
+            "{} Could not find the TZX file header.. Is this a valid TZX file?",
+            Red.paint("ERROR!")
+        );
+        std::process::exit(0);
+    }
 }
 
 /// Load the data from the specified TZX file into a buffer
