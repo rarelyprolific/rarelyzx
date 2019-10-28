@@ -6,39 +6,60 @@ use std::io::Read;
 fn main() {
     println!("{}", Yellow.on(Blue).paint("rarelyzx v0.00001"));
 
-    // TODO: Rename snapshot to TZX or use a generic file terminology for clarity later.
-    let snapshot_filename = get_snapshot_param();
+    // Get the name of the TZX file to load
+    let tzx_filename = get_tzx_filename_commandline_parameter();
 
-    let mut snapshot_buffer = Vec::new();
+    // Load the TZX file into a buffer
+    let mut tzx_buffer = Vec::new();
+    load_tzx_file(tzx_filename, &mut tzx_buffer);
 
-    match snapshot_filename {
-        Some(snapshot_filename) => load_snapshot(snapshot_filename, &mut snapshot_buffer),
-        None => std::process::exit(0),
+    // Print details about the TZX data
+    println!("Size: {} bytes", tzx_buffer.len());
+}
+
+/// Load the data from the specified TZX file into a buffer
+fn load_tzx_file(tzx_filename: String, tzx_buffer: &mut Vec<u8>) {
+    // TODO: Needed to add clone to tzx_filename String parameter to allow it to be used
+    // again in the Err(e) handler and keep the borrow checker happy. I'm probably doing
+    // Rust wrong here but I'll come back and fix it when I know what I'm doing!! :)
+    let file = fs::File::open(tzx_filename.clone());
+
+    match file {
+        Ok(mut file) => {
+            let read_result = file.read_to_end(tzx_buffer);
+
+            match read_result {
+                // TODO: Ok does nothing essentially. I'm still working out what is
+                // idiomatic Rust.. Probably should be using .expect above maybe?
+                Ok(_) => (),
+                Err(e) => println!("{} {}", Red.paint("ERROR!"), e),
+            }
+        }
+        Err(e) => {
+            println!(
+                "{} Unable to load {} [{}]",
+                Red.paint("ERROR!"),
+                tzx_filename,
+                e
+            );
+            std::process::exit(0);
+        }
     }
-
-    println!("Size: {} bytes", snapshot_buffer.len());
 }
 
-/// Load the data from the specified snapshot file into a buffer
-fn load_snapshot(snapshot_filename: String, snapshot_buffer: &mut Vec<u8>) {
-    // TODO: We need to get rid of the unwraps and do property error handling here
-    let mut file = fs::File::open(snapshot_filename).unwrap();
-    file.read_to_end(snapshot_buffer).unwrap();
-}
+/// Get the TZX filename parameter from the command line arguments
+fn get_tzx_filename_commandline_parameter() -> String {
+    let tzx_filename = env::args().nth(1);
 
-/// Get the snapshot filename parameter from the command line arguments
-fn get_snapshot_param() -> Option<String> {
-    let snapshot_filename = env::args().nth(1);
-
-    match snapshot_filename {
-        Some(snapshot_filename) => {
-            println!("Searching for: {}", snapshot_filename);
-            return Some(snapshot_filename);
+    match tzx_filename {
+        Some(tzx_filename) => {
+            println!("Searching for: {}", tzx_filename);
+            return tzx_filename;
         }
         None => {
             println!("{} No TZX file specified!", Red.paint("ERROR!"));
             show_usage_text();
-            return None;
+            std::process::exit(0);
         }
     }
 }
